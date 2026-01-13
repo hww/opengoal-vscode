@@ -500,7 +500,8 @@
         ],
         "extensions": [
           ".gs",
-          ".gp"
+          ".gp",
+          ".sot"
         ],
         "icon": {
           "light": "./icons/opengoal-goos.png",
