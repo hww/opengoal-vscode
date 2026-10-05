@@ -34,7 +34,7 @@
     "@types/vscode": "^1.89.0",
     "@typescript-eslint/eslint-plugin": "^7.10.0",
     "@typescript-eslint/parser": "^7.10.0",
-    "@vscode/vsce": "^2.26.1",
+    "@vscode/vsce": "^2.32.0",
     "esbuild": "^0.21.4",
     "patch-package": "^8.0.0",
     "prettier": "3.2.5",
@@ -501,7 +501,10 @@
         "extensions": [
           ".gs",
           ".gp",
-          ".sot"
+          ".sot",
+          ".soc",
+          ".st",
+          ".sc"
         ],
         "icon": {
           "light": "./icons/opengoal-goos.png",

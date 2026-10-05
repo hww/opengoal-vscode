@@ -1,37 +1,36 @@
-#!/bin/bash
+#!/usr/bin/env bash
+# WSL bridge: invoke build-and-install.ps1 on the Windows side.
+# Does not touch /mnt/* during the build - only resolves the Windows path once.
 
-# Останавливаем скрипт при любой ошибке
-set -e
+set -euo pipefail
 
-echo "🚀 Начинаю процесс сборки и установки OpenGoal VSCode..."
+PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-# 1. Установка зависимостей (если папка node_modules отсутствует)
-if [ ! -d "node_modules" ]; then
-    echo "📦 Зависимости не найдены. Запускаю yarn install..."
-    yarn install
-fi
-
-# 2. Очистка старых .vsix файлов
-echo "🧹 Удаление старых сборок..."
-rm -f *.vsix
-
-# 3. Сборка пакета
-echo "🏗️ Упаковка расширения через vsce..."
-# Используем npx на случай, если vsce не установлен глобально
-npx @vscode/vsce package
-
-# 4. Поиск созданного файла (имя зависит от версии в package.json)
-VSIX_FILE=$(ls *.vsix | head -n 1)
-
-if [ -f "$VSIX_FILE" ]; then
-    echo "✅ Файл собран: $VSIX_FILE"
-    
-    # 5. Установка в VS Code
-    echo "📥 Установка в Visual Studio Code..."
-    code --install-extension "$VSIX_FILE"
-    
-    echo "🎉 Готово! Перезапустите VS Code (или выполните Developer: Reload Window), чтобы изменения вступили в силу."
-else
-    echo "❌ Ошибка: .vsix файл не был найден."
+if ! grep -qi microsoft /proc/version 2>/dev/null; then
+    echo "This bridge is intended for WSL." >&2
+    echo "On native Linux, install @vscode/vsce and run: npx @vscode/vsce package --no-yarn" >&2
     exit 1
 fi
+
+PS_SCRIPT="$PROJECT_DIR/build-and-install.ps1"
+if [ ! -f "$PS_SCRIPT" ]; then
+    echo "ERROR: $PS_SCRIPT not found." >&2
+    exit 1
+fi
+
+WIN_PROJECT_DIR="$(wslpath -w "$PROJECT_DIR")"
+WIN_PS_SCRIPT="$(wslpath -w "$PS_SCRIPT")"
+
+echo "==> Project (WSL):     $PROJECT_DIR"
+echo "==> Project (Windows): $WIN_PROJECT_DIR"
+echo "==> Script  (Windows): $WIN_PS_SCRIPT"
+echo
+
+# -NoProfile: skip user profile (avoids surprises in corporate environments)
+# -ExecutionPolicy Bypass: allow running the script without changing the system policy
+cmd.exe /c powershell.exe -NoProfile -ExecutionPolicy Bypass \
+    -File "$WIN_PS_SCRIPT" -ProjectDir "$WIN_PROJECT_DIR"
+
+echo
+echo "==> Done (see output above). Install the .vsix manually in VS Code:"
+echo "    Ctrl+Shift+P -> Extensions: Install from VSIX..."
